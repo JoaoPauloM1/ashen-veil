@@ -1,15 +1,22 @@
-# settings.py
-
 # ─── TELA ────────────────────────────────────────────────────
 SCREEN_WIDTH  = 1280
 SCREEN_HEIGHT = 720
 FPS           = 60
 TITLE         = "Ashen Veil"
 
+# ─── MUNDO ───────────────────────────────────────────────────
+SCENE_WIDTH  = SCREEN_WIDTH
+SCENE_HEIGHT = SCREEN_HEIGHT
+NUM_SCENES   = 11                    # total de slots no mundo
+WORLD_WIDTH  = SCREEN_WIDTH * NUM_SCENES
+
+# ─── CHÃO ────────────────────────────────────────────────────
+GROUND_Y = 576
+
 # ─── VAEL (PLAYER) ───────────────────────────────────────────
-PLAYER_SPEED        = 5    # Pixels que o Vael move por frame
-PLAYER_JUMP_FORCE   = -15  # Força do pulo (negativo pois sobe = y diminui)
-GRAVITY             = 0.8  # Força da gravidade puxando o Vael pra baixo
-PLAYER_MAX_ASHES    = 2    # Vael começa com 2 Ashes
-PLAYER_WIDTH        = 40   # Largura do Vael em pixels (temporário, sem arte ainda)
-PLAYER_HEIGHT       = 70   # Altura do Vael em pixels (temporário, sem arte ainda)
+PLAYER_SPEED      = 4
+PLAYER_JUMP_FORCE = -12
+GRAVITY           = 0.5
+PLAYER_MAX_ASHES  = 2
+PLAYER_WIDTH      = 40
+PLAYER_HEIGHT     = 70

@@ -7,7 +7,8 @@ from settings import (
     PLAYER_WIDTH,
     PLAYER_HEIGHT,
     SCREEN_WIDTH,
-    SCREEN_HEIGHT
+    SCREEN_HEIGHT,
+    WORLD_WIDTH
 )
 
 class Player(pygame.sprite.Sprite):
@@ -45,36 +46,38 @@ class Player(pygame.sprite.Sprite):
         # Verifica quais teclas estão pressionadas nesse frame
         keys = pygame.key.get_pressed()
 
-        # Movimento horizontal
+        # Movimento horizontal com limite das bordas do mundo
         if keys[pygame.K_a]:
-            self.rect.x -= self.speed   # Move pra esquerda
+            # Impede o Vael de sair pela esquerda do mundo
+            if self.rect.left > 0:
+                self.rect.x -= self.speed
         if keys[pygame.K_d]:
-            self.rect.x += self.speed   # Move pra direita
+            # Impede o Vael de sair pela direita do mundo
+            if self.rect.right < WORLD_WIDTH:
+                self.rect.x += self.speed
 
         # Pulo — só pula se estiver no chão
         if keys[pygame.K_w] and self.on_ground:
             self.velocity_y = PLAYER_JUMP_FORCE  # Aplica força pra cima
             self.on_ground = False
 
-    def apply_gravity(self):
-        # A gravidade aumenta a velocidade vertical a cada frame
-        # fazendo o Vael acelerar enquanto cai
+    def apply_gravity(self, ground_y):
+        # Recebe o ground_y do cenário atual como parâmetro
         self.velocity_y += GRAVITY
         self.rect.y += self.velocity_y
 
-        # Chão temporário — impede o Vael de cair infinitamente
-        # por enquanto o chão é a borda inferior da tela
-        if self.rect.bottom >= SCREEN_HEIGHT:
-            self.rect.bottom = SCREEN_HEIGHT
+        if self.rect.bottom >= ground_y:
+            self.rect.bottom = ground_y
             self.velocity_y = 0
             self.on_ground = True
 
-    def update(self):
+    def update(self, ground_y):
         # update() é chamado todo frame pelo game loop
         # ele chama todos os sistemas do Vael em ordem
         self.handle_input()
-        self.apply_gravity()
+        self.apply_gravity(ground_y)
 
-    def draw(self, screen):
-        # Desenha o Vael na tela na posição do rect
-        screen.blit(self.image, self.rect)
+    def draw(self, screen, camera_x):
+        # Desconta o deslocamento da câmera para desenhar na posição certa da tela
+        draw_x = self.rect.x - camera_x
+        screen.blit(self.image, (draw_x, self.rect.y))
