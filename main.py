@@ -1,20 +1,17 @@
 import pygame
 import sys
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, TITLE
 
+# Inicializa todos os módulos do Pygame
 pygame.init()
-
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
 
 fullscreen = False
 
-# RESIZABLE permite redimensionar a janela e habilita o botão maximizar
+# Agora os valores vem do settings.py em vez de estar escritos aqui
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
-
-pygame.display.set_caption("Ashen Veil")
+pygame.display.set_caption(TITLE)
 
 clock = pygame.time.Clock()
-FPS = 60
 
 while True:
 
@@ -34,7 +31,6 @@ while True:
                 if fullscreen:
                     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
                 else:
-                    # Volta pro modo janela mantendo o RESIZABLE
                     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 
     screen.fill((0, 0, 0))
