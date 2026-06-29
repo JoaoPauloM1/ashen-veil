@@ -8,7 +8,7 @@ class Transition:
         self.surface.fill((0, 0, 0))
 
         self.alpha = 0           # 0 = transparente, 255 = preto total
-        self.speed = 3           # velocidade do fade
+        self.speed = 4           # velocidade do fade
         self.fading_out = False  # True = escurecendo, False = clareando
         self.active = False      # se uma transição está acontecendo
         self.done = False        # sinaliza que o fade terminou e pode trocar de cena
