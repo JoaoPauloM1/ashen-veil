@@ -5,6 +5,7 @@ from entities.player import Player
 from worlds.cemetery import Cemetery
 from transition import Transition
 from interaction import InteractionSystem
+from hud import HUD
 
 pygame.init()
 
@@ -13,17 +14,17 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE
 pygame.display.set_caption(TITLE)
 clock = pygame.time.Clock()
 
+# Sistemas — criados DEPOIS da tela existir, pois usam convert_alpha()
 cemetery = Cemetery()
 player = Player(100, 300)
 transition = Transition()
 interaction = InteractionSystem()
+hud = HUD()
 
 current_slot = 0
 
-# Slots de passagem livre — jogador anda sem fade entre eles
 FREE_PASS_SLOTS = [1, 2, 3, 6, 7, 8]
 
-# Fade ao chegar no fim DIREITO do slot
 FADE_RIGHT = {
     0: 1,
     3: 4,
@@ -32,11 +33,10 @@ FADE_RIGHT = {
     9: 10,
 }
 
-# Fade ao chegar no fim ESQUERDO do slot (voltar)
 FADE_LEFT = {
-    1: 0,   # início do loop cemiterio2 → volta para cemiterio1
-    4: 3,   # cemiterio3 → volta para fim do loop cemiterio2
-    9: 8,   # cemiterio6 → volta para fim do loop cemiterio5
+    1: 0,
+    4: 3,
+    9: 8,
     # slot 5 (interior igreja) — sem retorno
     # slot 10 (boss final) — sem retorno
 }
@@ -66,7 +66,6 @@ def change_scene(next_slot):
 def go_back(prev_slot):
     global current_slot
     current_slot = prev_slot
-    # Posiciona o jogador no fim do slot anterior
     player.rect.x = (prev_slot + 1) * SCENE_WIDTH - 200
     player.rect.y = GROUND_Y - player.rect.height
 
@@ -76,7 +75,6 @@ def check_scene_transitions():
     if transition.active:
         return
 
-    # Atualiza o slot baseado na posição do jogador
     detected_slot = player.rect.centerx // SCENE_WIDTH
     detected_slot = max(0, min(detected_slot, 10))
 
@@ -85,12 +83,10 @@ def check_scene_transitions():
 
     move_left, move_right = get_movement_bounds(current_slot)
 
-    # Chegou no fim direito — fade para próximo slot
     if player.rect.right >= move_right and current_slot in FADE_RIGHT:
         next_slot = FADE_RIGHT[current_slot]
         transition.start(lambda s=next_slot: change_scene(s))
 
-    # Chegou no fim esquerdo — fade para slot anterior
     elif player.rect.left <= move_left and current_slot in FADE_LEFT:
         prev_slot = FADE_LEFT[current_slot]
         transition.start(lambda s=prev_slot: go_back(s))
@@ -129,14 +125,12 @@ while True:
     transition.update()
     interaction.update(player.rect, cemetery.camera_x)
 
-    # Limites de movimento do jogador
     move_left, move_right = get_movement_bounds(current_slot)
     if player.rect.left < move_left:
         player.rect.left = move_left
     if player.rect.right > move_right:
         player.rect.right = move_right
 
-    # Limites da câmera
     cam_left, cam_right = get_camera_bounds(current_slot)
     cemetery.update_camera(player.rect, cam_left, cam_right)
 
@@ -147,6 +141,7 @@ while True:
     cemetery.draw(screen)
     player.draw(screen, cemetery.camera_x)
     interaction.draw(screen)
+    hud.draw(screen, player.ashes, player.parry_charges)
     transition.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)

@@ -11,7 +11,7 @@ NUM_SCENES   = 11                    # total de slots no mundo
 WORLD_WIDTH  = SCREEN_WIDTH * NUM_SCENES
 
 # ─── CHÃO ────────────────────────────────────────────────────
-GROUND_Y = 576
+GROUND_Y = 545
 
 # ─── VAEL (PLAYER) ───────────────────────────────────────────
 PLAYER_SPEED      = 4
