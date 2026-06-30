@@ -2,6 +2,7 @@ import pygame
 import sys
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, TITLE, SCENE_WIDTH, GROUND_Y, WORLD_WIDTH
 from entities.player import Player
+from entities.dummy import Dummy
 from worlds.cemetery import Cemetery
 from transition import Transition
 from interaction import InteractionSystem
@@ -17,6 +18,7 @@ clock = pygame.time.Clock()
 # Sistemas — criados DEPOIS da tela existir, pois usam convert_alpha()
 cemetery = Cemetery()
 player = Player(100, 300)
+dummy = Dummy(SCENE_WIDTH + 400, GROUND_Y - 80)  # boneco de teste no segundo cenário
 transition = Transition()
 interaction = InteractionSystem()
 hud = HUD()
@@ -124,6 +126,7 @@ while True:
     check_scene_transitions()
     transition.update()
     interaction.update(player.rect, cemetery.camera_x)
+    dummy.update()
 
     move_left, move_right = get_movement_bounds(current_slot)
     if player.rect.left < move_left:
@@ -134,12 +137,13 @@ while True:
     cam_left, cam_right = get_camera_bounds(current_slot)
     cemetery.update_camera(player.rect, cam_left, cam_right)
 
-    player.update(GROUND_Y)
+    player.update(GROUND_Y, [dummy])
 
     # ── DRAW ──
     screen.fill((0, 0, 0))
     cemetery.draw(screen)
     player.draw(screen, cemetery.camera_x)
+    dummy.draw(screen, cemetery.camera_x)
     interaction.draw(screen)
     hud.draw(screen, player.ashes, player.parry_charges)
     transition.draw(screen)
