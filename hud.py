@@ -18,48 +18,23 @@ class HUD:
         self.veil_active   = pygame.transform.scale(self.veil_active, (80, 80))
         self.veil_inactive = pygame.transform.scale(self.veil_inactive, (80, 80))
 
-        self.margin       = 40   # margem maior — desce e afasta da borda
+        # Versão "vazia" do ícone de Ash — mesma imagem mas bem escurecida
+        # simula a Ash perdida sem precisar de um arquivo novo
+        self.ash_icon_empty = self.ash_icon.copy()
+        self.ash_icon_empty.fill((60, 60, 60, 255), special_flags=pygame.BLEND_RGBA_MULT)
+
+        self.margin       = 40
         self.icon_spacing = 12
         self.padding      = 18
 
-    def draw_panel(self, screen, x, y, width, height):
-        panel = pygame.Surface((width, height), pygame.SRCALPHA)
-
-        # Fundo escuro arroxeado, mais profundo que preto puro
-        pygame.draw.rect(panel, (18, 12, 28, 190), (0, 0, width, height), border_radius=14)
-
-        # Borda externa roxa sutil, como energia sobrenatural
-        pygame.draw.rect(panel, (90, 60, 130, 220), (0, 0, width, height), width=3, border_radius=14)
-
-        # Borda interna mais fina e clara, dá efeito de "moldura dupla"
-        inner_margin = 5
-        pygame.draw.rect(
-            panel, (140, 110, 180, 140),
-            (inner_margin, inner_margin, width - inner_margin * 2, height - inner_margin * 2),
-            width=1, border_radius=10
-        )
-
-        # Cantos com pequenos "ornamentos" — círculos sutis nos 4 cantos
-        corner_radius = 3
-        corner_color = (170, 140, 210, 200)
-        corners = [
-            (8, 8),
-            (width - 8, 8),
-            (8, height - 8),
-            (width - 8, height - 8),
-        ]
-        for cx, cy in corners:
-            pygame.draw.circle(panel, corner_color, (cx, cy), corner_radius)
-
-        screen.blit(panel, (x, y))
-
-    def draw(self, screen, ashes, parry_charges):
-        panel_width = max(
-            ashes * self.ash_icon.get_width() + (ashes - 1) * self.icon_spacing if ashes > 0 else self.ash_icon.get_width(),
+        # ── PAINEL FIXO ──
+        # Calculado UMA VEZ usando o máximo de Ashes — nunca muda de tamanho
+        self.panel_width = max(
+            PLAYER_MAX_ASHES * self.ash_icon.get_width() + (PLAYER_MAX_ASHES - 1) * self.icon_spacing,
             self.veil_active.get_width()
         ) + self.padding * 2
 
-        panel_height = (
+        self.panel_height = (
             self.ash_icon.get_height() +
             self.icon_spacing +
             self.charge_icon.get_height() +
@@ -68,16 +43,47 @@ class HUD:
             self.padding * 2
         )
 
-        panel_x = self.margin - self.padding
-        panel_y = self.margin - self.padding
+        self.panel_x = self.margin - self.padding
+        self.panel_y = self.margin - self.padding
 
-        self.draw_panel(screen, panel_x, panel_y, panel_width, panel_height)
+    def draw_panel(self, screen):
+        panel = pygame.Surface((self.panel_width, self.panel_height), pygame.SRCALPHA)
 
-        # ── ASHES (topo) ──
+        pygame.draw.rect(panel, (18, 12, 28, 190), (0, 0, self.panel_width, self.panel_height), border_radius=14)
+        pygame.draw.rect(panel, (90, 60, 130, 220), (0, 0, self.panel_width, self.panel_height), width=3, border_radius=14)
+
+        inner_margin = 5
+        pygame.draw.rect(
+            panel, (140, 110, 180, 140),
+            (inner_margin, inner_margin, self.panel_width - inner_margin * 2, self.panel_height - inner_margin * 2),
+            width=1, border_radius=10
+        )
+
+        corner_radius = 3
+        corner_color = (170, 140, 210, 200)
+        corners = [
+            (8, 8),
+            (self.panel_width - 8, 8),
+            (8, self.panel_height - 8),
+            (self.panel_width - 8, self.panel_height - 8),
+        ]
+        for cx, cy in corners:
+            pygame.draw.circle(panel, corner_color, (cx, cy), corner_radius)
+
+        screen.blit(panel, (self.panel_x, self.panel_y))
+
+    def draw(self, screen, ashes, parry_charges):
+        # Painel sempre no mesmo lugar, mesmo tamanho
+        self.draw_panel(screen)
+
+        # ── ASHES (topo) — sempre desenha os 3 slots, cheio ou vazio ──
         ash_y = self.margin
-        for i in range(ashes):
+        for i in range(PLAYER_MAX_ASHES):
             x = self.margin + i * (self.ash_icon.get_width() + self.icon_spacing)
-            screen.blit(self.ash_icon, (x, ash_y))
+            if i < ashes:
+                screen.blit(self.ash_icon, (x, ash_y))
+            else:
+                screen.blit(self.ash_icon_empty, (x, ash_y))
 
         # ── PARRY CHARGES (abaixo das ashes) ──
         charges_y = ash_y + self.ash_icon.get_height() + self.icon_spacing

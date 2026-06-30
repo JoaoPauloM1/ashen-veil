@@ -39,6 +39,11 @@ class Player(pygame.sprite.Sprite):
         self.feedback_color = None
         self.feedback_timer = 0
 
+        # ── COOLDOWN DO PARRY ──
+        # Impede o jogador de spammar a tecla E sem parar
+        self.parry_cooldown_ms = 600
+        self.last_parry_time = 0
+
     def handle_input(self, enemies=None):
         if enemies is None:
             enemies = []
@@ -84,13 +89,19 @@ class Player(pygame.sprite.Sprite):
         return None
 
     def try_parry(self, enemies):
+        # Verifica o cooldown — impede spam da tecla
+        now = pygame.time.get_ticks()
+        if now - self.last_parry_time < self.parry_cooldown_ms:
+            return
+
+        self.last_parry_time = now
+
         for enemy in enemies:
             if enemy.attack_hitbox and self.rect.colliderect(enemy.attack_hitbox):
                 if enemy.is_lethal:
                     continue
 
                 if enemy.is_in_parry_window():
-                    print("[DEBUG] PARRY BEM-SUCEDIDO!")
                     enemy.already_parried = True
                     enemy.attack_hitbox = None
                     self.parry_charges = min(self.parry_charges + 1, 3)
@@ -99,11 +110,12 @@ class Player(pygame.sprite.Sprite):
                     return
 
     def check_hits(self, enemies):
-        # Só verifica dano no exato frame em que a janela de ataque termina
+        # Só causa dano se o jogador realmente estava dentro da hitbox
+        # no momento em que a janela de ataque se fechou
         for enemy in enemies:
             if enemy.attack_window_just_ended and not enemy.already_parried:
-                print("[DEBUG] Jogador tomou dano!")
-                self.take_hit()
+                if enemy.last_attack_hitbox and self.rect.colliderect(enemy.last_attack_hitbox):
+                    self.take_hit()
 
     def take_hit(self):
         self.ashes -= 1

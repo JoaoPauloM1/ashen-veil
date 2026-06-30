@@ -21,15 +21,17 @@ class Dummy(pygame.sprite.Sprite):
         # A hitbox de ataque — só existe durante o estado "attacking"
         self.attack_hitbox = None
 
+        # Guarda a última hitbox mesmo depois dela ser removida
+        # usado para verificar se o jogador estava na área certa quando a janela fechou
+        self.last_attack_hitbox = None
+
         # Sinaliza que a janela de ataque acabou de fechar nesse frame
-        # usado para verificar dano apenas uma vez, no momento certo
         self.attack_window_just_ended = False
 
     def update(self):
         now = pygame.time.get_ticks()
         elapsed = now - self.state_timer
 
-        # Reseta a flag todo frame — ela só fica True por 1 frame
         self.attack_window_just_ended = False
 
         if self.state == "idle":
@@ -46,7 +48,6 @@ class Dummy(pygame.sprite.Sprite):
                 self.state = "attacking"
                 self.state_timer = now
 
-                # Hitbox larga cobrindo os dois lados do dummy
                 hitbox_width = 200
                 self.attack_hitbox = pygame.Rect(
                     self.rect.centerx - hitbox_width // 2,
@@ -58,8 +59,8 @@ class Dummy(pygame.sprite.Sprite):
         elif self.state == "attacking":
             self.image.fill((255, 255, 255))
             if elapsed >= PARRY_WINDOW_MS:
-                # A janela está terminando — sinaliza para verificar dano
                 self.attack_window_just_ended = True
+                self.last_attack_hitbox = self.attack_hitbox  # guarda antes de apagar
                 self.state = "recovery"
                 self.state_timer = now
                 self.attack_hitbox = None
@@ -80,7 +81,6 @@ class Dummy(pygame.sprite.Sprite):
         draw_x = self.rect.x - camera_x
         screen.blit(self.image, (draw_x, self.rect.y))
 
-        # DEBUG — mostra a hitbox de ataque visualmente
         if self.attack_hitbox:
             debug_rect = pygame.Rect(
                 self.attack_hitbox.x - camera_x,
