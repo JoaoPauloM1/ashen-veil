@@ -1,12 +1,13 @@
 import pygame
 import sys
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, TITLE, SCENE_WIDTH, GROUND_Y, WORLD_WIDTH
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, TITLE, SCENE_WIDTH, GROUND_Y, WORLD_WIDTH, PLAYER_MAX_ASHES
 from entities.player import Player
 from entities.dummy import Dummy
 from worlds.cemetery import Cemetery
 from transition import Transition
 from interaction import InteractionSystem
 from hud import HUD
+from checkpoint import CheckpointSystem
 
 pygame.init()
 
@@ -15,13 +16,13 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE
 pygame.display.set_caption(TITLE)
 clock = pygame.time.Clock()
 
-# Sistemas — criados DEPOIS da tela existir, pois usam convert_alpha()
 cemetery = Cemetery()
 player = Player(100, 300)
-dummy = Dummy(SCENE_WIDTH + 400, GROUND_Y - 80)  # boneco de teste no segundo cenário
+dummy = Dummy(SCENE_WIDTH + 400, GROUND_Y - 80)
 transition = Transition()
 interaction = InteractionSystem()
 hud = HUD()
+checkpoint = CheckpointSystem()
 
 current_slot = 0
 
@@ -39,8 +40,6 @@ FADE_LEFT = {
     1: 0,
     4: 3,
     9: 8,
-    # slot 5 (interior igreja) — sem retorno
-    # slot 10 (boss final) — sem retorno
 }
 
 def get_camera_bounds(slot):
@@ -70,6 +69,24 @@ def go_back(prev_slot):
     current_slot = prev_slot
     player.rect.x = (prev_slot + 1) * SCENE_WIDTH - 200
     player.rect.y = GROUND_Y - player.rect.height
+
+def respawn_player():
+    # Chamado no meio do fade, quando a tela está completamente preta
+    global current_slot
+
+    # Volta para o slot do último checkpoint salvo
+    current_slot = checkpoint.saved_slot
+
+    # Reposiciona o jogador no início desse slot
+    player.rect.x = current_slot * SCENE_WIDTH + 100
+    player.rect.y = GROUND_Y - player.rect.height
+
+    # Restaura Ashes e cargas de parry
+    player.ashes = PLAYER_MAX_ASHES
+    player.parry_charges = 0
+
+    # Reseta o estado de morte
+    player.is_dead = False
 
 def check_scene_transitions():
     global current_slot
@@ -123,9 +140,16 @@ while True:
                         print("Fim do Mundo 1!")
 
     # ── UPDATE ──
+
+    # Verifica morte ANTES das transições normais — tem prioridade
+    if player.is_dead and not transition.active:
+        transition.start(respawn_player)
+
     check_scene_transitions()
     transition.update()
     interaction.update(player.rect, cemetery.camera_x)
+    checkpoint.check(current_slot)
+    checkpoint.update()
     dummy.update()
 
     move_left, move_right = get_movement_bounds(current_slot)
@@ -146,6 +170,7 @@ while True:
     dummy.draw(screen, cemetery.camera_x)
     interaction.draw(screen)
     hud.draw(screen, player.ashes, player.parry_charges)
+    checkpoint.draw(screen, player.rect, cemetery.camera_x)
     transition.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
